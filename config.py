@@ -4,7 +4,7 @@ resized_dataset = "./data"
 
 target_datasets = [
     "./data/squirrels_head",
-    #'./data/squirrels_tail',
+    './data/squirrels_tail',
     "./data/the_center_of_the_gemstone",
     "./data/the_center_of_the_koalas_nose",
     "./data/the_center_of_the_owls_head",
@@ -28,20 +28,16 @@ image_width = 256
 
 # Для обучения и валидации
 learning_rate = 0.001
-num_epochs = 20
+num_epochs = 50
 gamma = 0.95
 rotate_limit = 10
-early_stopping = 20
+early_stopping = 10
 verbose = 20
 batch_size = 16
 num_workers = 4
 
-model_type = "mobile"
+full_data = False
 
-train_df_path = ["./data/train_df.pkl"]
-valid_df_path = ["./data/test_df.pkl"]
+test_weights = "./best_model.pth"
 
-test_weights = (
-    "./experiments/exp_22_10-11-2023_17:36:11/weights/ep_11_valid_loss_0.2754"
-)
-test_df_path = ["./data/test_df.pkl"]
+# test_df_path = ["./data/test_df.pkl"]

@@ -64,7 +64,7 @@ class ModelWrapper(nn.Module):
         result: dict - словарь со значениями loss при тренировке, валидации и
         метрики при валидации для каждой эпохи"""
 
-        best_valid_loss = 0
+        best_valid_loss = 999999
         num_epochs_without_improve = 0
 
         epoch_train_losses = []
@@ -81,11 +81,12 @@ class ModelWrapper(nn.Module):
             logger.info("=" * 35 + f" Epoch: {epoch+1} " + "=" * 35)
 
             for batch_idx, data in enumerate(train_data_loader):
-                inputs = data[0].to(device)
-                target = data[1].to(device)
+                images = data[0].to(device)
+                dataset_idxs = data[1].to(device)
+                target = data[2].to(device)
                 optimizer.zero_grad()
 
-                outputs = self.model(inputs)
+                outputs = self.model(images, dataset_idxs)
                 loss = criterion(outputs, target)
                 loss.backward()
                 optimizer.step()
@@ -122,7 +123,7 @@ class ModelWrapper(nn.Module):
                 self.save(
                     path_to_save=f"{directory_to_save}/ep_{epoch+1}_valid_loss_{valid_loss:.4f}"
                 )
-                if valid_loss > best_valid_loss:
+                if valid_loss < best_valid_loss:
                     best_valid_loss = valid_loss
                     num_epochs_without_improve = 0
                 else:
@@ -135,7 +136,7 @@ class ModelWrapper(nn.Module):
                 if num_epochs_without_improve == early_stopping:
                     logger.info(
                         f"{num_epochs_without_improve} epochs without"
-                        + "metric improoving. Training will be stopped"
+                        + "loss decreasing. Training will be stopped"
                     )
                     break
             else:
@@ -177,11 +178,12 @@ class ModelWrapper(nn.Module):
 
         with torch.no_grad():
             for batch_idx, data in enumerate(valid_data_loader):
-                inputs = data[0].to(device)
-                target = data[1].to(device)
+                images = data[0].to(device)
+                dataset_idxs = data[1].to(device)
+                target = data[2].to(device)
 
                 all_true.append(target)
-                pred = self.model(inputs)
+                pred = self.model(images, dataset_idxs)
                 all_pred.append(pred)
 
         all_true = torch.vstack(all_true)

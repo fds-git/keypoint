@@ -20,6 +20,7 @@ class KeypointDataset(Dataset):
 
         self.image_paths = dataframe["image_paths"]
         self.keypoints = dataframe["keypoints"]
+        self.dataset_idxs = dataframe["dataset_idxs"]
         self.transform = transform
         self.data_len = len(dataframe.index)
         self.horizontal_flip = horizontal_flip
@@ -48,7 +49,7 @@ class KeypointDataset(Dataset):
         ).float()
         transformed_keypoints = transformed_keypoints.view(-1)
 
-        return transformed_image, transformed_keypoints
+        return transformed_image, self.dataset_idxs[index], transformed_keypoints
 
     def __len__(self):
         return self.data_len

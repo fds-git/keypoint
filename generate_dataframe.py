@@ -6,7 +6,7 @@ import numpy as np
 from json import JSONDecodeError
 from typing import List
 
-from config import target_datasets, image_height, image_width
+from config import target_datasets, image_height, image_width, target_mapper
 
 
 def get_result_dataframe(
@@ -32,6 +32,7 @@ def get_dataframe_for_dataset(
 
     image_paths = []
     keypoints = []
+    dataset_idxs = []
     for unique_object in unique_objects:
         try:
             image_path = os.path.join(target_folder, unique_object + ".jpg")
@@ -53,6 +54,7 @@ def get_dataframe_for_dataset(
 
             image_paths.append(image_path)
             keypoints.append(np.array([x, y]))
+            dataset_idxs.append(target_mapper[target_folder])
 
         except JSONDecodeError:
             print(f"Ошибка формата JSON {keypoint_path}")
@@ -74,6 +76,7 @@ def get_dataframe_for_dataset(
     data = {}
     data["image_paths"] = image_paths
     data["keypoints"] = keypoints
+    data["dataset_idxs"] = dataset_idxs
     data = pd.DataFrame.from_dict(data)
     return data
 
