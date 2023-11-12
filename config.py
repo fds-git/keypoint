@@ -33,11 +33,11 @@ test_datasets = [
 test_target_mapper = {test_datasets[i]: i for i in range(len(test_datasets))}
 
 # Для проведения экспериментов
-learning_rate = 0.001
+learning_rate = 0.002
 num_epochs = 50
-gamma = 0.95
-rotate_limit = 10
-early_stopping = 5
+gamma = 0.9
+rotate_limit = 20
+early_stopping = 10
 verbose = 20
 batch_size = 16
 num_workers = 4
@@ -47,5 +47,4 @@ full_data = False
 train_df_path = './train_dataframe.pkl'
 test_df_path = './test_dataframe.pkl'
 
-best_model = "./best_model.pth"
-test_weights = './experiments/exp_1_12-11-2023_22:25:01/weights/ep_10_valid_loss_430.8599'
+test_weights = './weights/ep_16_train_loss_334.7822'

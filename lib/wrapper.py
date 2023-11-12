@@ -4,7 +4,8 @@ import torch
 import time
 import numpy as np
 import logging
-from typing import Callable, Dict
+from typing import Callable, Dict, Tuple
+from tqdm import tqdm
 
 logger = logging.getLogger("main")
 
@@ -176,7 +177,7 @@ class ModelWrapper(nn.Module):
         all_pred = []
 
         with torch.no_grad():
-            for batch_idx, data in enumerate(valid_data_loader):
+            for data in tqdm(valid_data_loader):
                 images = data[0].to(device)
                 dataset_idxs = data[1].to(device)
                 target = data[2].to(device)
@@ -226,7 +227,7 @@ class ModelWrapper(nn.Module):
 
         torch.save(self.model.state_dict(), path_to_save)
 
-    def trace_save(self, path_to_save: str, example_forward_input: torch.tensor):
+    def trace_save(self, path_to_save: str, example_forward_input: Tuple[torch.tensor, torch.tensor]):
         """Метод сохранения модели через torchscript
         Входные параметры:
         path_to_save: str - директория для сохранения модели

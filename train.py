@@ -25,7 +25,7 @@ from config import (
     num_workers,
     rotate_limit,
     train_df_path,
-    full_data
+    full_data,
 )
 from config import verbose, image_height, image_width, treashold
 
@@ -85,7 +85,10 @@ def main():
             ),
             A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ToTensorV2(),
-        ], keypoint_params=A.KeypointParams(format='xy', remove_invisible=False, angle_in_degrees=True)
+        ],
+        keypoint_params=A.KeypointParams(
+            format="xy", remove_invisible=False, angle_in_degrees=True
+        ),
     )
 
     transform_test = A.Compose(
@@ -96,32 +99,55 @@ def main():
     )
 
     dataframe = pd.read_pickle(train_df_path)
-    
-    train_df, valid_df = train_test_split(dataframe, test_size=0.25, random_state=42)
-    train_df.reset_index(drop=True, inplace=True)
-    valid_df.reset_index(drop=True, inplace=True)
 
-    train_dataset = KeypointDataset(
-        train_df, transform_train, image_height=image_height, image_width=image_width
-    )
+    if not full_data:
 
-    train_data_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
+        train_df, valid_df = train_test_split(
+            dataframe, test_size=0.25, random_state=42
+        )
+        train_df.reset_index(drop=True, inplace=True)
+        valid_df.reset_index(drop=True, inplace=True)
 
-    valid_dataset = KeypointDataset(
-        valid_df, transform_test, image_height=image_height, image_width=image_width
-    )
+        train_dataset = KeypointDataset(
+            train_df,
+            transform_train,
+            image_height=image_height,
+            image_width=image_width,
+        )
 
-    valid_data_loader = DataLoader(
-        valid_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
+        train_data_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+
+        valid_dataset = KeypointDataset(
+            valid_df, transform_test, image_height=image_height, image_width=image_width
+        )
+
+        valid_data_loader = DataLoader(
+            valid_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+    else:
+        train_dataset = KeypointDataset(
+            dataframe,
+            transform_train,
+            image_height=image_height,
+            image_width=image_width,
+        )
+
+        train_data_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+
+        valid_data_loader = None
 
     model = MobileKeypointNet().to(device)
     model_wrapper = ModelWrapper(model=model)
