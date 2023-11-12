@@ -1,5 +1,7 @@
 data
 raw_data
+test_data
 experiments
 __pycache__/
-dataframe.pkl
+train_dataframe.pkl
+test_dataframe.pkl

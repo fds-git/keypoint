@@ -15,7 +15,6 @@ class KeypointDataset(Dataset):
         transform: Callable,
         image_width: int,
         image_height: int,
-        horizontal_flip: bool = False,
     ):
 
         self.image_paths = dataframe["image_paths"]
@@ -23,7 +22,6 @@ class KeypointDataset(Dataset):
         self.dataset_idxs = dataframe["dataset_idxs"]
         self.transform = transform
         self.data_len = len(dataframe.index)
-        self.horizontal_flip = horizontal_flip
         self.image_width = image_width
         self.image_height = image_height
 

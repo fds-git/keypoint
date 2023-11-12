@@ -1,25 +1,19 @@
 import logging
-
+import time
 import albumentations as A
 import pandas as pd
 import torch
 import torch.nn as nn
-import yaml
-import json
 from albumentations.pytorch import ToTensorV2
-from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
-import os
 
-from lib.dataset import MaskDataset
-from lib.mobilenet import MobileMaskNet
-from lib.my_own_net import MyOwnNet
+from lib.dataset import KeypointDataset
+from lib.mobilenet import MobileKeypointNet
 from lib.wrapper import ModelWrapper
-from train_test_config import batch_size, num_workers
-from train_test_config import test_df_path as test_paths
-from train_test_config import test_weights
-from train_test_config import model_type
-from lib.tools import get_metrics_3_classes
+from config import batch_size, num_workers, test_df_path
+from config import test_weights
+from config import image_height, image_width, treashold
+from lib.metrics import MeanRelativeDistance, MeanAccuracy
 
 logger = logging.getLogger("main")
 logger.setLevel(logging.DEBUG)
@@ -44,69 +38,69 @@ def main():
 
     result = [{"test_weights": test_weights}]
 
-    criterion = nn.CrossEntropyLoss()
-    #metric = accuracy_score
-    metric = get_metrics_3_classes
-    
-    if model_type == "mobile":
-        model = MobileMaskNet().to(device)
-    else:
-        model = MyOwnNet().to(device)
-    
+    criterion = nn.MSELoss()
+    mean_relative_distance = MeanRelativeDistance(
+        image_width=image_width, image_height=image_height
+    )
+    mean_accuracy = MeanAccuracy(
+        image_width=image_width, image_height=image_height, treashold=treashold
+    )
+    metrics = {
+        "mean_accuracy": mean_accuracy,
+        "mean_relative_distance": mean_relative_distance,
+    }
+
+    model = MobileKeypointNet().to(device)
     model_wrapper = ModelWrapper(model=model)
 
     try:
         model_wrapper.load(path_to_model=test_weights)
-    except FileNotFoundError as e:
-        logger.error(f'Файл с весами модели {test_weights} не найден')
+    except FileNotFoundError:
+        logger.error(f"Файл с весами модели {test_weights} не найден")
         return
-        
+
     transform_test = A.Compose(
         [
             A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-            ToTensorV2()
-            ]
-        )
-
+            ToTensorV2(),
+        ]
+    )
     # Если указаны тестовые датафреймы, то для каждого формируем СВОЙ даталоадер
     try:
-        test_dfs = [pd.read_pickle(test_path) for test_path in test_paths]
-    except FileNotFoundError as e:
-        logger.error(f'Ошибка при загрузке датафреймов {test_paths}')
+        test_df = pd.read_pickle(test_df_path)
+    except FileNotFoundError:
+        logger.error(f"Ошибка при загрузке датафрейма {test_df_path}")
         return
-    
-    for test_df in test_dfs:
-        test_df["image_paths"] = test_df["image_paths"].apply(
-            lambda x: os.path.normpath("./data/" + x)
-        )
-    
-    test_datasets = [MaskDataset(test_df, transform_test) for test_df in test_dfs]
-    test_data_loaders = [
-        DataLoader(
-            test_dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=num_workers,
-        )
-        for test_dataset in test_datasets
-    ]
-    logger.info(f"Test will be executed for weights: {test_weights}")
-    logger.info(f"Test will be executed on {test_paths}")
-    test_results = [
-        model_wrapper.valid(criterion, metric, test_data_loader, device)
-        for test_data_loader in test_data_loaders
-    ]
-    test_losses = [test_result["valid_loss"] for test_result in test_results]
-    test_metrics = [test_result["valid_metric"] for test_result in test_results]
-    logger.info(f"Metrics on test datasets: {test_metrics}")
-    result.append({"test_path": test_paths})
-    result.append({'test_losses': [test_loss.item() for test_loss in test_losses]})
-    result.append(
-        {"test_metrics": [test_metric for test_metric in test_metrics]}
+
+    test_dataset = KeypointDataset(
+        dataframe=test_df,
+        transform=transform_test,
+        image_width=image_width,
+        image_height=image_height,
     )
 
-    with open(r"./test_result.json", "w") as file:
-        json.dump(result, file)
+    test_data_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+    )
+
+    logger.info(f"Test will be executed for weights: {test_weights}")
+    logger.info(f"Test will be executed on {test_df_path}")
+
+    start = time.time()
+    test_result = model_wrapper.valid(criterion, metrics, test_data_loader, device)
+    stop = time.time()
+
+    test_loss = test_result["valid_loss"]
+    test_metric = test_result["valid_metric"]
+    logger.info(f"Metrics on test datasets: {test_metric}")
+    logger.info(f"Total time: {stop - start} seconds")
+
+    result.append({"test_path": test_df_path})
+    result.append({"test_loss": test_loss})
+    result.append({"test_metric": test_metric})
 
 
 if __name__ == "__main__":

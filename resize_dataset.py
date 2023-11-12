@@ -8,7 +8,7 @@ from config import (
     resized_dataset, 
     image_height, 
     image_width,
-    target_datasets
+    train_datasets
     )
 
 
@@ -45,7 +45,7 @@ def main():
     shutil.copytree(raw_dataset, resized_dataset)
     print("Копирование окончено")
     
-    for target_dataset in target_datasets:
+    for target_dataset in train_datasets:
         print(f"Начало предобработки {target_dataset}")
         resize_dataset(target_folder=target_dataset, image_height=image_height, image_width=image_width)
         print(f"Обработка {target_dataset} закончена")

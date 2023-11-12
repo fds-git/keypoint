@@ -24,6 +24,8 @@ from config import (
     num_epochs,
     num_workers,
     rotate_limit,
+    train_df_path,
+    full_data
 )
 from config import verbose, image_height, image_width, treashold
 
@@ -83,7 +85,7 @@ def main():
             ),
             A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             ToTensorV2(),
-        ]
+        ], keypoint_params=A.KeypointParams(format='xy', remove_invisible=False, angle_in_degrees=True)
     )
 
     transform_test = A.Compose(
@@ -93,7 +95,8 @@ def main():
         ]
     )
 
-    dataframe = pd.read_pickle("./dataframe.pkl")
+    dataframe = pd.read_pickle(train_df_path)
+    
     train_df, valid_df = train_test_split(dataframe, test_size=0.25, random_state=42)
     train_df.reset_index(drop=True, inplace=True)
     valid_df.reset_index(drop=True, inplace=True)
@@ -102,7 +105,7 @@ def main():
         train_df, transform_train, image_height=image_height, image_width=image_width
     )
 
-    valid_data_loader = DataLoader(
+    train_data_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
@@ -142,7 +145,7 @@ def main():
         metrics=metrics,
         optimizer=optimizer,
         scheduler=scheduler,
-        train_data_loader=valid_data_loader,
+        train_data_loader=train_data_loader,
         valid_data_loader=valid_data_loader,
         epochs=num_epochs,
         early_stopping=early_stopping,

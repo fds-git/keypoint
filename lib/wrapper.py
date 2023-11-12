@@ -172,7 +172,6 @@ class ModelWrapper(nn.Module):
 
         self.model.eval()
         result = {}
-
         all_true = []
         all_pred = []
 
@@ -209,9 +208,10 @@ class ModelWrapper(nn.Module):
         result = []
         with torch.no_grad():
             for batch_idx, data in enumerate(predict_data_loader):
-                inputs = data[0].to(device)
-                outputs = self.model(inputs)
-                landmarks = outputs.view(inputs.shape[0], 2)
+                images = data[0].to(device)
+                dataset_idxs = data[1].to(device)
+                outputs = self.model(images, dataset_idxs)
+                landmarks = outputs.view(images.shape[0], 2)
                 landmarks = landmarks.detach().cpu().numpy()
                 result.append(landmarks)
         self.model.train()
