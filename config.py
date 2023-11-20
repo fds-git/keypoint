@@ -20,11 +20,11 @@ verbose = 20
 batch_size = 16
 num_workers = 4
 treashold = 0.1
-full_data = False
+full_data = True
 
 # Датафреймы для обучения и тестирования
 train_df_path = './generated/train_dataframe.pkl'
 test_df_path = './generated/test_dataframe.pkl'
 
 # Веса для тестирования
-test_weights = './experiments/exp_27_20-11-2023_18:21:43/weights/ep_3_valid_loss_466.1808'
+test_weights = './experiments/exp_2_20-11-2023_19:49:12/weights/ep_5_train_loss_546.7198'

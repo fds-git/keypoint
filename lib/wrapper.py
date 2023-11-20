@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, List, Any
 
 import numpy as np
 import torch
@@ -14,22 +14,24 @@ logger = logging.getLogger("main")
 class ModelWrapper(nn.Module):
     """Класс, реализующий функционал для работы с нейронной сетью"""
 
-    def __init__(self, model: object):
-        """Конструктор класса
+    def __init__(self, model: nn.Module) -> None:
+        """
+        Конструктор класса
         Входные параметры:
-        model: object - последовательность слоев или модель,
-        через которую будут проходить данные"""
-
+        model - последовательность слоев или модель,
+        через которую будут проходить данные
+        """
         super(ModelWrapper, self).__init__()
         self.model = model
 
-    def forward(self, input_data: torch.Tensor):
-        """Метод прямого прохода через объект класса
+    def forward(self, input_data: torch.Tensor) -> torch.Tensor:
+        """
+        Метод прямого прохода через объект класса
         Входные параметры:
-        input_data: torch.Tensor - тензорное представление входа нейронной сети
+        input_data - тензорное представление входа нейронной сети
         Возвращаемые значения:
-        output_data: torch.Tensor - тензорное представление выхода нейронной сети"""
-
+        output_data - тензорное представление выхода нейронной сети
+        """
         output_data = self.model(input_data)
         return output_data
 
@@ -46,26 +48,27 @@ class ModelWrapper(nn.Module):
         device: str,
         valid_data_loader: DataLoader = None,
         verbose: int = 5,
-    ):
-        """Метод для обучения модели
+    ) -> Dict[str, List[Any]]:
+        """
+        Метод для обучения модели
         Входные параметры:
-        criterion: Callable - объект для вычисления loss
-        metric: Callable - объект для вычисления метрики качества
-        optimizer: object - оптимизатор
-        scheduler: object - объект для изменения lr в ходе обучения
-        train_data_loader: DataLoader - загрузчик данных для обучения
-        valid_data_loader: DataLoader - загрузчик данных для валидации
-        epochs: int - количество эпох обучения
-        early_stopping: int - количество эпох без улучшения метрики при
+        criterion - функция для вычисления loss
+        metrics - словарь с функциями метрик
+        optimizer - оптимизатор
+        scheduler - объект для изменения lr в ходе обучения
+        train_data_loader - загрузчик данных для обучения
+        valid_data_loader - загрузчик данных для валидации
+        epochs - количество эпох обучения
+        early_stopping - количество эпох без улучшения метрики при
         валидации для ранней остановки
         (только если valid_data_loader != None)
-        verbose: int - вывод информации через каждые verbose итераций
-        directory_to_save: str - директория для сохранения модели после каждой эпохи
-        device: str - устройство выполнения операций
+        verbose - вывод информации через каждые verbose итераций
+        directory_to_save - директория для сохранения модели после каждой эпохи
+        device - устройство выполнения операций
         Возвращаемые значения:
-        result: dict - словарь со значениями loss при тренировке, валидации и
-        метрики при валидации для каждой эпохи"""
-
+        result - словарь со значениями loss при тренировке, валидации и
+        метрики при валидации для каждой эпохи
+        """
         best_valid_loss = 999999
         num_epochs_without_improve = 0
 
@@ -162,16 +165,17 @@ class ModelWrapper(nn.Module):
         metrics: Dict[str, Callable],
         valid_data_loader: DataLoader,
         device: str,
-    ):
-        """Метод для валидации модели
+    ) -> Dict[str, float | Dict[str, Dict[str, float]]]:
+        """
+        Метод для валидации модели
         Входные параметры:
-        criterion: object - объект для вычисления loss
-        metric: object - объект для вычисления метрики качества
-        valid_data_loader: DataLoader - загрузчик данных для валидации
+        criterion - объект для вычисления loss
+        metric - объект для вычисления метрики качества
+        valid_data_loader - загрузчик данных для валидации
         device: str - устройство для выполнения операций
         Возвращаемые значения:
-        result: dict - словарь со значениями loss и метрики при валидации"""
-
+        result: dict - словарь со значениями loss и метрики при валидации
+        """
         self.model.eval()
         result = {}
         all_true = []
@@ -198,14 +202,15 @@ class ModelWrapper(nn.Module):
 
         return result
 
-    def predict(self, predict_data_loader: DataLoader, device: str):
-        """Метод получения предсказания модели
+    def predict(self, predict_data_loader: DataLoader, device: str) -> np.ndarray:
+        """
+        Метод получения предсказания модели
         Входные параметры:
-        predict_data_loader: DataLoader - загрузчик данных для валидации
-        device: str - устройство выполнения операций
+        predict_data_loader - загрузчик данных для валидации
+        device - устройство выполнения операций
         Возвращаемые значения:
-        result: np.ndarray - предсказания модели"""
-
+        result: np.ndarray - предсказания модели
+        """
         self.model.eval()
         result = []
         with torch.no_grad():
@@ -221,32 +226,37 @@ class ModelWrapper(nn.Module):
         result = np.vstack(result)
         return result
 
-    def save(self, path_to_save: str):
-        """Метод сохранения весов модели
+    def save(self, path_to_save: str) -> None:
+        """
+        Метод сохранения весов модели
         Входные параметры:
-        path_to_save: str - директория для сохранения состояния модели"""
-
+        path_to_save: str - директория для сохранения состояния модели
+        """
         torch.save(self.model.state_dict(), path_to_save)
 
     def trace_save(
         self,
         path_to_save: str,
-        example_forward_input: Tuple[torch.tensor, torch.tensor],
-    ):
-        """Метод сохранения модели через torchscript
+        example_forward_input: Tuple[torch.Tensor, torch.Tensor],
+    ) -> None:
+        """
+        Метод сохранения модели через torchscript
         Входные параметры:
-        path_to_save: str - директория для сохранения модели
-        example_forward_input: torch.tensor - тензор для трассировки"""
-
+        path_to_save - директория для сохранения модели
+        example_forward_input - тензор для трассировки
+        """
         traced_model = torch.jit.trace((self.model).eval(), example_forward_input)
         torch.jit.save(traced_model, path_to_save)
 
-    def save_to_onnx(self, path_to_save: str, example_forward_input: torch.tensor):
-        """Метод конвертации модели в ONNX формат
+    def save_to_onnx(
+        self, path_to_save: str, example_forward_input: torch.Tensor
+    ) -> None:
+        """
+        Метод конвертации модели в ONNX формат
         Входные параметры:
-        path_to_save: str - директория для сохранения модели
-        example_forward_input: torch.tensor - тензор для трассировки"""
-
+        path_to_save - директория для сохранения модели
+        example_forward_input - тензор для трассировки
+        """
         torch.onnx.export(
             self.model.to("cpu"),
             example_forward_input,
@@ -263,9 +273,10 @@ class ModelWrapper(nn.Module):
             dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}},
         )  # the model's output names
 
-    def load(self, path_to_model: str):
-        """Метод загрузки весов модели
+    def load(self, path_to_model: str) -> None:
+        """
+        Метод загрузки весов модели
         Входные параметры:
-        path_to_model: str - директория с сохраненными весами модели"""
-
+        path_to_model: str - директория с сохраненными весами модели
+        """
         self.model.load_state_dict(torch.load(path_to_model))
