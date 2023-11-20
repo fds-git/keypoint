@@ -1,33 +1,26 @@
+import json
 import logging
 import os
 import shutil
 from datetime import datetime
-from sklearn.model_selection import train_test_split
 
 import albumentations as A
 import pandas as pd
 import torch
 import torch.nn as nn
 from albumentations.pytorch import ToTensorV2
+from sklearn.model_selection import train_test_split
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader
 
+from config import (batch_size, early_stopping, full_data, gamma, image_height,
+                    image_width, learning_rate, mapper_path, num_epochs,
+                    num_workers, rotate_limit, train_df_path, treashold,
+                    verbose)
 from lib.dataset import KeypointDataset
+from lib.metrics import MeanAccuracy, MeanRelativeDistance
 from lib.mobilenet import MobileKeypointNet
 from lib.wrapper import ModelWrapper
-from lib.metrics import MeanRelativeDistance, MeanAccuracy
-from config import (
-    batch_size,
-    early_stopping,
-    gamma,
-    learning_rate,
-    num_epochs,
-    num_workers,
-    rotate_limit,
-    train_df_path,
-    full_data,
-)
-from config import verbose, image_height, image_width, treashold
 
 logger = logging.getLogger("main")
 logger.setLevel(logging.DEBUG)
@@ -148,8 +141,12 @@ def main():
         )
 
         valid_data_loader = None
-
-    model = MobileKeypointNet().to(device)
+    
+    with open(mapper_path, 'r') as outfile:
+        target_mapper = json.load(outfile)
+        
+    num_classes = len(target_mapper)
+    model = MobileKeypointNet(num_classes=num_classes).to(device)
     model_wrapper = ModelWrapper(model=model)
 
     optimizer = torch.optim.Adam(model_wrapper.parameters(), lr=learning_rate)

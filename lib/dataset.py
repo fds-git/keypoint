@@ -1,9 +1,10 @@
-from torch.utils.data import Dataset
-import pandas as pd
+from typing import Callable
+
 import cv2
 import numpy as np
+import pandas as pd
 import torch
-from typing import Callable
+from torch.utils.data import Dataset
 
 
 class KeypointDataset(Dataset):

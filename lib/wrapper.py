@@ -1,10 +1,11 @@
+import logging
+import time
+from typing import Callable, Dict, Tuple
+
+import numpy as np
+import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import torch
-import time
-import numpy as np
-import logging
-from typing import Callable, Dict, Tuple
 from tqdm import tqdm
 
 logger = logging.getLogger("main")
@@ -227,7 +228,11 @@ class ModelWrapper(nn.Module):
 
         torch.save(self.model.state_dict(), path_to_save)
 
-    def trace_save(self, path_to_save: str, example_forward_input: Tuple[torch.tensor, torch.tensor]):
+    def trace_save(
+        self,
+        path_to_save: str,
+        example_forward_input: Tuple[torch.tensor, torch.tensor],
+    ):
         """Метод сохранения модели через torchscript
         Входные параметры:
         path_to_save: str - директория для сохранения модели

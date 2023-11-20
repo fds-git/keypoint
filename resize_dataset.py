@@ -1,54 +1,62 @@
 import os
-import cv2
 import shutil
+
+import cv2
 from tqdm import tqdm
 
-from config import (
-    raw_dataset, 
-    resized_dataset, 
-    image_height, 
-    image_width,
-    train_datasets
-    )
+from config import image_height, image_width, raw_train_dataset, train_dataset
 
 
 def resize_dataset(target_folder: str, image_height: int, image_width: int) -> None:
     filenames = os.listdir(target_folder)
-    cutted_filenames = [filename.split('.')[0] for filename in filenames]
+    cutted_filenames = [filename.split(".")[0] for filename in filenames]
     unique_objects = list(set(cutted_filenames))
 
     for unique_object in tqdm(unique_objects):
         try:
-            image_path = os.path.join(target_folder, unique_object + '.jpg')
+            image_path = os.path.join(target_folder, unique_object + ".jpg")
             image = cv2.imread(image_path)
             height, width = image.shape[0], image.shape[1]
             if (height != image_height) or (width != image_width):
-                image = cv2.resize(image, (image_width, image_height), interpolation = cv2.INTER_LINEAR)
-                cv2.imwrite(image_path, image) 
+                image = cv2.resize(
+                    image, (image_width, image_height), interpolation=cv2.INTER_LINEAR
+                )
+                cv2.imwrite(image_path, image)
             else:
                 continue
-            
+
         except FileNotFoundError as e:
             print(e)
             continue
-        
+
         except Exception as e:
             print(e)
             continue
 
 
 def main():
-    if os.path.isdir(resized_dataset):
-        shutil.rmtree(resized_dataset)
+    if not os.path.isdir(raw_train_dataset):
+        print(f"Отсутствует {raw_train_dataset}")
+        return
     
-    print(f"Копирование {raw_dataset} в {resized_dataset}")
-    shutil.copytree(raw_dataset, resized_dataset)
+    if os.path.isdir(train_dataset):
+        shutil.rmtree(train_dataset)
+
+    print(f"Копирование {raw_train_dataset} в {train_dataset}")
+    shutil.copytree(raw_train_dataset, train_dataset)
     print("Копирование окончено")
     
-    for target_dataset in train_datasets:
-        print(f"Начало предобработки {target_dataset}")
-        resize_dataset(target_folder=target_dataset, image_height=image_height, image_width=image_width)
-        print(f"Обработка {target_dataset} закончена")
+    folders = os.listdir(train_dataset)
+
+    for folder in folders:
+        print(f"Начало предобработки {folder}")
+        resize_dataset(
+            target_folder=os.path.join(train_dataset, folder),
+            image_height=image_height,
+            image_width=image_width,
+        )
+        print(f"Обработка {folder} закончена")
+
 
 if __name__ == "__main__":
     main()

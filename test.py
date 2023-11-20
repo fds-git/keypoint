@@ -1,5 +1,7 @@
 import logging
 import time
+import json
+
 import albumentations as A
 import pandas as pd
 import torch
@@ -7,13 +9,12 @@ import torch.nn as nn
 from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader
 
+from config import (batch_size, image_height, image_width, num_workers,
+                    test_df_path, test_weights, treashold, mapper_path)
 from lib.dataset import KeypointDataset
+from lib.metrics import MeanAccuracy, MeanRelativeDistance
 from lib.mobilenet import MobileKeypointNet
 from lib.wrapper import ModelWrapper
-from config import batch_size, num_workers, test_df_path
-from config import test_weights
-from config import image_height, image_width, treashold
-from lib.metrics import MeanRelativeDistance, MeanAccuracy
 
 logger = logging.getLogger("main")
 logger.setLevel(logging.DEBUG)
@@ -49,8 +50,12 @@ def main():
         "mean_accuracy": mean_accuracy,
         "mean_relative_distance": mean_relative_distance,
     }
+    
+    with open(mapper_path, 'r') as outfile:
+        target_mapper = json.load(outfile)
+    num_classes = len(target_mapper)
 
-    model = MobileKeypointNet().to(device)
+    model = MobileKeypointNet(num_classes=num_classes).to(device)
     model_wrapper = ModelWrapper(model=model)
 
     try:
@@ -65,7 +70,7 @@ def main():
             ToTensorV2(),
         ]
     )
-    # Если указаны тестовые датафреймы, то для каждого формируем СВОЙ даталоадер
+
     try:
         test_df = pd.read_pickle(test_df_path)
     except FileNotFoundError:
@@ -95,7 +100,7 @@ def main():
 
     test_loss = test_result["valid_loss"]
     test_metric = test_result["valid_metric"]
-    logger.info(f"Metrics on test datasets: {test_metric}")
+    logger.info(f"Metrics on test dataset: {test_metric}")
     logger.info(f"Total time: {stop - start} seconds")
 
     result.append({"test_path": test_df_path})
